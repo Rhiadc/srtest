@@ -1,8 +1,10 @@
-package cepschemaregistry
+package cepsr
 
 import (
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
+	"log"
 
 	"github.com/riferrei/srclient"
 )
@@ -17,16 +19,16 @@ const schemaDef = `{
 }`
 
 type SchemaRegistry struct {
-	Client srclient.SchemaRegistryClient
+	Client *srclient.SchemaRegistryClient
 }
 
-func NewSchemaRegistryClient(schemaRegistryURL string) *SchemaRegistry {
-	schemaRegistryClient := srclient.CreateSchemaRegistryClient(schemaRegistryURL)
-	return &SchemaRegistry{*schemaRegistryClient}
+func NewSchemaRegistryClient(client *srclient.SchemaRegistryClient) *SchemaRegistry {
+	return &SchemaRegistry{Client: client}
 }
 
 func (sr SchemaRegistry) GetOrCreateSchema(topic string) (*srclient.Schema, error) {
 	schema, err := sr.Client.GetLatestSchema(topic)
+	log.Fatal(schema)
 	if schema == nil {
 		schema, err = sr.Client.CreateSchema(topic, schemaDef, srclient.Avro)
 		return schema, err
@@ -55,6 +57,7 @@ func (sr SchemaRegistry) EncodeMessageIntoAvroAndInsertSchemaID(message interfac
 	recordValue = append(recordValue, byte(0))
 	recordValue = append(recordValue, schemaIDBytes...)
 	recordValue = append(recordValue, valueBytes...)
-
+	fmt.Println(recordValue)
+	fmt.Println(schemaIDBytes)
 	return recordValue, nil
 }

@@ -7,10 +7,12 @@ import (
 	"net/http"
 
 	cepschemaregistry "github.com/rhiadc/srtest/cep_schema_client"
+	"github.com/riferrei/srclient"
 )
 
 type ComplexType struct {
 	ID   int    `json:"id"`
+	Age  int    `json:"age"`
 	Name string `json:"name"`
 }
 
@@ -25,18 +27,16 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse the JSON data from the request body
-	var user ComplexType
+	var user map[string]interface{}
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, "Error parsing JSON:", err)
-		user = ComplexType{ID: 1, Name: "Gopher"}
+		user = map[string]interface{}{"ID": 1, "Name": "Gopher"}
 	}
 
-	// Create a new client instance for the Schema Registry
-	// 2) Fetch the latest version of the schema, or create a new one if it is the first
-
-	schemaRegistry := cepschemaregistry.NewSchemaRegistryClient("http://localhost:8085")
+	src := srclient.CreateSchemaRegistryClient("http://localhost:8085")
+	schemaRegistry := cepschemaregistry.NewSchemaRegistryClient(src)
 
 	schema, err := schemaRegistry.GetOrCreateSchema(topic)
 	if err != nil {
@@ -48,7 +48,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 	recordValue, err := schemaRegistry.EncodeMessageIntoAvroAndInsertSchemaID(user, schema)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, "Error encoding the message:", err)
+		fmt.Fprintln(w, "Error encoding message:", err)
 		return
 	}
 
